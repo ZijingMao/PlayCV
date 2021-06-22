@@ -1,2 +1,2 @@
 # PlayCV
-Computer vision algorithms library for fast testing
+Computer vision algorithms tools based on OpenCV for quick testing ideas
