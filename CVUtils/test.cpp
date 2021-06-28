@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
     // create a window
     namedWindow(PROCESSED_NAME, 2);
 
-    vector<string> proc_name = {"ContrastBright", "test"};
+    vector<string> proc_name = {"ContrastBright"};
     CVManager cvManager = CVManager(src);
     cvManager.loadParamMap();
     cvManager.loadCVLibMap();

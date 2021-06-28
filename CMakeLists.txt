@@ -18,3 +18,5 @@ include_directories (${OpenCV_INCLUDE_DIRS})
 add_subdirectory (CVUtils)
 add_test (NAME cv_test COMMAND cv_test)
 
+add_subdirectory (Testcases)
+add_test (NAME optical_flow_test COMMAND optical_flow_test)

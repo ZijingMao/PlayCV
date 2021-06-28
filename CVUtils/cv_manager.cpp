@@ -22,13 +22,13 @@ void CVManager::loadParamMap()
 {
     m_M2P = {
         {"ContrastBright", {"bright", "contrast"}},
-        {"test", {"bar"}}};
+        {"OpticalFlow", {"levels", "winsize", "iterations"}}};
 }
 
 void CVManager::loadCVLibMap()
 {
     m_CVLibMap.insert(make_pair("ContrastBright", CVLibrary::onContrastBright));
-    m_CVLibMap.insert(make_pair("test", CVLibrary::onContrastBright));
+    m_CVLibMap.insert(make_pair("OpticalFlow", CVLibrary::onOpticalFlow));
 }
 
 void CVManager::loadSequence()
@@ -36,8 +36,6 @@ void CVManager::loadSequence()
     CVLibrary::m_Src = m_Src;
     CVLibrary::m_Dst = m_Dst;
     CVLibrary::m_Tmp = m_Tmp;
-    vector<vector<UserData>> uDataVector;
-    vector<CVHandler> cMethod;
     for (int idx = 0; idx < m_ProcessSequence.size(); idx++)
     {
         string m = m_ProcessSequence[idx];
@@ -50,9 +48,9 @@ void CVManager::loadSequence()
             uData->emplace_back(*u);
         }
         CVHandler *c = new CVHandler(*uData);
-        cMethod.emplace_back(*c);
-        uDataVector.emplace_back(*uData);
-        c->addTrackBar();
-        c->registCVMethod(m_CVLibMap[m]);
+        m_cMethod.emplace_back(*c);
+        m_uDataVector.emplace_back(*uData);
+        m_cMethod[idx].addTrackBar();
+        m_cMethod[idx].registCVMethod(m_CVLibMap[m]);
     }
 }
