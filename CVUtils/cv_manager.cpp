@@ -22,13 +22,15 @@ void CVManager::loadParamMap()
 {
     m_M2P = {
         {"ContrastBright", {"bright", "contrast"}},
-        {"OpticalFlow", {"levels", "winsize", "iterations"}}};
+        {"OpticalFlow", {"levels", "winsize", "iterations"}},
+        {"ColorRatioSegment", {"loose"}}};
 }
 
 void CVManager::loadCVLibMap()
 {
     m_CVLibMap.insert(make_pair("ContrastBright", CVLibrary::onContrastBright));
     m_CVLibMap.insert(make_pair("OpticalFlow", CVLibrary::onOpticalFlow));
+    m_CVLibMap.insert(make_pair("ColorRatioSegment", CVLibrary::onColorRatioSegment));
 }
 
 void CVManager::loadSequence()

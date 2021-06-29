@@ -13,6 +13,8 @@ Mat CVLibrary::m_Dst;
 Mat CVLibrary::m_Tmp;
 Mat CVLibrary::m_Prev;
 
+vector<vector<float>> CVLibrary::m_vColorTable;
+
 void CVLibrary::onContrastBright(vector<int> &paramValue)
 {
     if (paramValue.size() != 2)
@@ -100,7 +102,6 @@ void CVLibrary::motionToColor(Mat flow, Mat &color)
             int k0 = (int)fk;
             int k1 = (k0 + 1) % colorwheel.size();
             float f = fk - k0;
-            //f = 0; // uncomment to see original color wheel
 
             for (int b = 0; b < 3; b++)
             {
@@ -125,9 +126,9 @@ void CVLibrary::onOpticalFlow(vector<int> &paramValue)
         return;
     }
     int levels, winsize, iterations;
-    levels = paramValue[0] / 10 + 1;
-    winsize = paramValue[1] / 5 + 1;
-    iterations = paramValue[2] / 5 + 1;
+    levels = paramValue[0] / 10 + 1;    // range from [1:1:11]
+    winsize = paramValue[1] / 5 + 1;    // range from [1:1:21]
+    iterations = paramValue[2] / 5 + 1; // range from [1:1:21]
     Mat flow;
     if (m_Src.channels() != 1)
         cvtColor(m_Src, m_Tmp, CV_BGR2GRAY);
@@ -135,6 +136,50 @@ void CVLibrary::onOpticalFlow(vector<int> &paramValue)
     {
         calcOpticalFlowFarneback(m_Prev, m_Tmp, flow, 0.5, levels, winsize, iterations, 5, 1.2, 0);
         motionToColor(flow, m_Dst);
+        imshow(PROCESSED_NAME, m_Dst);
     }
     std::swap(m_Prev, m_Tmp);
+}
+
+void CVLibrary::makeColorRatio(vector<vector<float>> &data)
+{
+}
+
+void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
+{
+    if (paramValue.size() != 3)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 3" << endl;
+        return;
+    }
+    if (m_vColorTable.size() != 255)
+    {
+        cout << "make color ratio incorrect" << endl;
+        return;
+    }
+    float loose = paramValue[0] / 100.0; // range from [0:0.01:1]
+    float b2g(0), g2r(0);
+    m_Dst = Mat::zeros(m_Src.rows, m_Src.cols, CV_8UC1);
+    Mat gray;
+    cvtColor(m_Src, gray, CV_BGR2GRAY);
+    for (int i = 0; i < m_Src.rows; ++i)
+    {
+        for (int j = 0; j < m_Src.cols; ++j)
+        {
+            int b = m_Src.at<Vec3b>(i, j)[0];
+            int g = m_Src.at<Vec3b>(i, j)[1];
+            int r = m_Src.at<Vec3b>(i, j)[2];
+            b2g = (float)(b / g * 1.0);
+            g2r = (float)(g / r * 1.0);
+            int gs = gray.at<uchar>(i, j);
+            if (b2g >= m_vColorTable[gs][0] - loose &&
+                b2g <= m_vColorTable[gs][1] + loose &&
+                g2r >= m_vColorTable[gs][2] - loose &&
+                g2r <= m_vColorTable[gs][3] + loose)
+            {
+                m_Dst.at<uchar>(i, j) = 255;
+            }
+        }
+    }
+    imshow(PROCESSED_NAME, m_Dst);
 }
