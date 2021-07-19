@@ -7,7 +7,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
-#define PROCESSED_NAME "PROCESSED"
+#define PROCESSED_WIN "PROCESSED"
+#define DRAW_RECT_WIN "Rectangle Acquired"
 #define UNKNOWN_FLOW_THRESH 1e9
 
 class CVLibrary
@@ -21,13 +22,13 @@ public:
     static cv::Mat m_Tmp;
     static cv::Mat m_Prev;
 
-    static std::vector<std::vector<float>> m_vColorTable;
+    static std::array<std::array<float, 4>, 256> m_vColorTable;
 
     static void onContrastBright(std::vector<int> &paramValue);
     static void makeColorWheel(std::vector<cv::Scalar> &colorwheel);
     static void motionToColor(cv::Mat flow, cv::Mat &color);
     static void onOpticalFlow(std::vector<int> &paramValue);
-    static void makeColorRatio(std::vector<std::vector<float>> &data);
+    static void makeColorRatio(const std::vector<cv::Rect> &roiRegions);
     static void onColorRatioSegment(std::vector<int> &paramValue);
 };
 

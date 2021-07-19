@@ -33,11 +33,15 @@ void CVManager::loadCVLibMap()
     m_CVLibMap.insert(make_pair("ColorRatioSegment", CVLibrary::onColorRatioSegment));
 }
 
+void CVManager::initCVLibData()
+{
+    CVLibrary::m_Src = getSrc();
+    CVLibrary::m_Dst = getDst();
+    CVLibrary::m_Tmp = getTmp();
+}
+
 void CVManager::loadSequence()
 {
-    CVLibrary::m_Src = m_Src;
-    CVLibrary::m_Dst = m_Dst;
-    CVLibrary::m_Tmp = m_Tmp;
     for (int idx = 0; idx < m_ProcessSequence.size(); idx++)
     {
         string m = m_ProcessSequence[idx];
@@ -50,6 +54,7 @@ void CVManager::loadSequence()
             uData->emplace_back(*u);
         }
         CVHandler *c = new CVHandler(*uData);
+        // TODO: dynamic pointer cast to smart point
         m_cMethod.emplace_back(*c);
         m_uDataVector.emplace_back(*uData);
         m_cMethod[idx].addTrackBar();

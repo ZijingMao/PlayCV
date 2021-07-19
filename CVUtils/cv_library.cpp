@@ -13,7 +13,7 @@ Mat CVLibrary::m_Dst;
 Mat CVLibrary::m_Tmp;
 Mat CVLibrary::m_Prev;
 
-vector<vector<float>> CVLibrary::m_vColorTable;
+array<array<float, 4>, 256> CVLibrary::m_vColorTable;
 
 void CVLibrary::onContrastBright(vector<int> &paramValue)
 {
@@ -23,7 +23,7 @@ void CVLibrary::onContrastBright(vector<int> &paramValue)
         return;
     }
     m_Src.convertTo(m_Dst, -1, (double)paramValue[1] / 50.0, paramValue[0] - 50);
-    imshow(PROCESSED_NAME, m_Dst);
+    imshow(PROCESSED_WIN, m_Dst);
 }
 
 void CVLibrary::makeColorWheel(vector<Scalar> &colorwheel)
@@ -136,25 +136,68 @@ void CVLibrary::onOpticalFlow(vector<int> &paramValue)
     {
         calcOpticalFlowFarneback(m_Prev, m_Tmp, flow, 0.5, levels, winsize, iterations, 5, 1.2, 0);
         motionToColor(flow, m_Dst);
-        imshow(PROCESSED_NAME, m_Dst);
+        imshow(PROCESSED_WIN, m_Dst);
     }
     std::swap(m_Prev, m_Tmp);
 }
 
-void CVLibrary::makeColorRatio(vector<vector<float>> &data)
+void CVLibrary::makeColorRatio(const vector<Rect> &roiRegions)
 {
+    if (roiRegions.empty())
+    {
+        cout << "no region specified to make color ratio" << endl;
+        return;
+    }
+    // init table
+    for (int i = 0; i < 255; i++)
+    {
+        m_vColorTable[i][0] = INFINITY;
+        m_vColorTable[i][2] = INFINITY;
+    }
+    // you can save the data and load when the program init
+    for (const Rect &r : roiRegions)
+    {
+        Mat roi = m_Src(r); // get the cropped roi region
+        Mat roi_gray;
+        cvtColor(roi, roi_gray, CV_BGR2GRAY);
+        for (int i = 0; i < roi.rows; i++)
+        {
+            for (int j = 0; j < roi.cols; j++)
+            {
+                int b = roi.at<Vec3b>(i, j)[0];
+                int g = roi.at<Vec3b>(i, j)[1];
+                int r = roi.at<Vec3b>(i, j)[2];
+                float b2g = (float)(b * 1.0 / g);
+                float g2r = (float)(g * 1.0 / r);
+                int gs = roi_gray.at<uchar>(i, j);
+                if (gs > 255 || gs < 0)
+                {
+                    cout << "gray scale error not range in 0-255" << endl;
+                    return;
+                }
+                if (m_vColorTable[gs][0] > b2g)
+                    m_vColorTable[gs][0] = b2g;
+                if (m_vColorTable[gs][1] < b2g)
+                    m_vColorTable[gs][1] = b2g;
+                if (m_vColorTable[gs][2] > g2r)
+                    m_vColorTable[gs][2] = g2r;
+                if (m_vColorTable[gs][3] < g2r)
+                    m_vColorTable[gs][3] = g2r;
+            }
+        }
+    }
 }
 
 void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
 {
-    if (paramValue.size() != 3)
+    if (paramValue.size() != 1)
     {
         cout << "Method paramter size is: " << paramValue.size() << ", which require to be 3" << endl;
         return;
     }
-    if (m_vColorTable.size() != 255)
+    if (m_vColorTable.size() != 256)
     {
-        cout << "make color ratio incorrect" << endl;
+        cout << "make color ratio incorrect: " << m_vColorTable.size() << endl;
         return;
     }
     float loose = paramValue[0] / 100.0; // range from [0:0.01:1]
@@ -162,15 +205,15 @@ void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
     m_Dst = Mat::zeros(m_Src.rows, m_Src.cols, CV_8UC1);
     Mat gray;
     cvtColor(m_Src, gray, CV_BGR2GRAY);
-    for (int i = 0; i < m_Src.rows; ++i)
+    for (int i = 0; i < m_Src.rows; i++)
     {
-        for (int j = 0; j < m_Src.cols; ++j)
+        for (int j = 0; j < m_Src.cols; j++)
         {
             int b = m_Src.at<Vec3b>(i, j)[0];
             int g = m_Src.at<Vec3b>(i, j)[1];
             int r = m_Src.at<Vec3b>(i, j)[2];
-            b2g = (float)(b / g * 1.0);
-            g2r = (float)(g / r * 1.0);
+            b2g = (float)(b * 1.0 / g);
+            g2r = (float)(g * 1.0 / r);
             int gs = gray.at<uchar>(i, j);
             if (b2g >= m_vColorTable[gs][0] - loose &&
                 b2g <= m_vColorTable[gs][1] + loose &&
@@ -181,5 +224,5 @@ void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
             }
         }
     }
-    imshow(PROCESSED_NAME, m_Dst);
+    imshow(PROCESSED_WIN, m_Dst);
 }

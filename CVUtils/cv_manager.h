@@ -19,6 +19,7 @@ public:
     void loadParamMap();
     void loadSequence();
     void loadCVLibMap();
+    void initCVLibData();
     void setSrc(cv::Mat src)
     {
         m_Src = src;

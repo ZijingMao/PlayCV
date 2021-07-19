@@ -5,6 +5,7 @@
 #include <map>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "cv_library.h"
 
 struct UserData
 {
@@ -20,9 +21,17 @@ public:
     CVHandler(std::vector<UserData> &params);
     virtual ~CVHandler() {};
 
+    static cv::Point m_Base;
+    static cv::Rect m_Roi;
+    static std::vector<cv::Rect> m_RoiSet;
+    static cv::Mat m_Layer;
+    static cv::Mat m_Working;
+    static bool m_bIsDraw;
+
     static void userData(struct UserData *ud, int cVal, int mVal,
                          std::string &mName, std::string &pName);
     static void onBarChange(int value, void *userData);
+    static void onMouseTrigger(int event, int x, int y, int flags, void* userdata);
     void registCVMethod(void (*new_action)(std::vector<int> &paramValue));
     void addTrackBar();
     void onCVMethod();

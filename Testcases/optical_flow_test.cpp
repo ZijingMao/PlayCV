@@ -15,10 +15,11 @@ int main(int argc, char const *argv[])
         return -1;
     Mat src;
     // create a window
-    namedWindow(PROCESSED_NAME, 2);
+    namedWindow(PROCESSED_WIN, 2);
 
     vector<string> proc_name = {"OpticalFlow"};
     CVManager cvManager = CVManager(src);
+    cvManager.initCVLibData();
     cvManager.loadParamMap();
     cvManager.loadCVLibMap();
     cvManager.setProcSeq(proc_name);

@@ -20,17 +20,18 @@ int main(int argc, char const *argv[])
         return -1;
     }
     // create a window
-    namedWindow(PROCESSED_NAME, 2);
+    namedWindow(PROCESSED_WIN, 2);
 
     vector<string> proc_name = {"ContrastBright"};
     CVManager cvManager = CVManager(src);
+    cvManager.initCVLibData();
     cvManager.loadParamMap();
     cvManager.loadCVLibMap();
     cvManager.setProcSeq(proc_name);
     cvManager.loadSequence();
 
     // show the brightness and contrast adjusted image
-    imshow(PROCESSED_NAME, cvManager.getDst());
+    imshow(PROCESSED_WIN, cvManager.getDst());
     // wait until user press key for 50ms
     waitKey(0);
     destroyAllWindows();
