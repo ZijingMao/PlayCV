@@ -12,64 +12,79 @@ Mat CVHandler::m_Layer;
 Mat CVHandler::m_Working;
 bool CVHandler::m_bIsDraw = false;
 
-CVHandler::CVHandler(vector<UserData> &params) : m_Params(params)
+CVHandler::CVHandler()
 {
-    if (params.size() > 0)
-    {
-        methodName(params[0].methodName);
-    }
 }
 
 void CVHandler::onCVMethod()
 {
-    if (m_Actions[methodName()])
+    for (auto method : m_sMethodName)
     {
-        updateParamsVal();
-        m_Actions[methodName()](paramsVal());
+        if (m_Actions[method])
+        {
+            updateParamsVal();
+            m_Actions[method](m_SrcImgs[method],
+                              m_SrcImgs[method],
+                              m_ParamsVal[method]);
+        }
     }
 }
 
-void CVHandler::registCVMethod(void (*new_action)(vector<int> &paramValue))
+void CVHandler::registCVMethod(string &mName, void (*new_action)(Mat &src, Mat &dst, vector<int> &paramValue))
 {
-    m_Actions[methodName()] = new_action;
+    m_Actions[mName] = new_action;
+}
+
+void CVHandler::registCVParams(string &mName, vector<shared_ptr<UserData>> &data)
+{
+    m_Params[mName] = data;
+}
+
+void CVHandler::registCVImgs(string &mName, Mat &src, Mat &dst)
+{
+    m_SrcImgs[mName] = src;
+    m_DstImgs[mName] = dst;
 }
 
 void CVHandler::onBarChange(int value, void *userData)
 {
     CVHandler *c = (CVHandler *)(userData);
-    string methodName = c->methodName();
     c->onCVMethod();
 }
 
 void CVHandler::updateParamsVal()
 {
-    m_ParamsVal.clear();
-    for (int idx = 0; idx < params().size(); idx++)
+    for (auto method : m_sMethodName)
     {
-        string barName = methodName() + "-" + params().at(idx).paramName;
-        int barValue = getTrackbarPos(barName, PROCESSED_WIN);
-        m_ParamsVal.emplace_back(barValue);
-        cout << barName << ":\t" << barValue << endl;
+        m_ParamsVal[method].clear();
+        for (int idx = 0; idx < m_Params[method].size(); idx++)
+        {
+            string barName = method + "-" + m_Params[method].at(idx)->paramName;
+            int barValue = getTrackbarPos(barName, PROCESSED_WIN);
+            m_ParamsVal[method].emplace_back(barValue);
+            cout << barName << ":\t" << barValue << endl;
+        }
     }
 }
 
-void CVHandler::userData(UserData *ud, int cVal, int mVal,
-                         string &mName, string &pName)
+void CVHandler::userData(shared_ptr<UserData> &ud, int cVal, int mVal, string &pName)
 {
     ud->currVal = cVal;
     ud->maxVal = mVal;
-    ud->methodName = mName;
     ud->paramName = pName;
 }
 
 void CVHandler::addTrackBar()
 {
-    for (int idx = 0; idx < params().size(); idx++)
+    for (auto method : m_sMethodName)
     {
-        string barName = methodName() + "-" + params().at(idx).paramName;
-        createTrackbar(barName, PROCESSED_WIN,
-                       &params().at(idx).currVal,
-                       params().at(idx).maxVal, onBarChange, this);
+        for (int idx = 0; idx < m_Params[method].size(); idx++)
+        {
+            string barName = method + "-" + m_Params[method].at(idx)->paramName;
+            createTrackbar(barName, PROCESSED_WIN,
+                           &m_Params[method].at(idx)->currVal,
+                           m_Params[method].at(idx)->maxVal, onBarChange, this);
+        }
     }
 }
 

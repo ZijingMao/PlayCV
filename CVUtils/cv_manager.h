@@ -40,19 +40,18 @@ public:
     cv::Mat getSrc() { return m_Src; }
     cv::Mat getDst() { return m_Dst; }
     cv::Mat getTmp() { return m_Tmp; }
-    
-    std::vector<std::vector<UserData>> m_uDataVector;
-    std::vector<CVHandler> m_cMethod;
+
+    std::vector<std::vector<std::shared_ptr<UserData>>> m_uDataVector;
+    std::vector<cv::Mat> m_SrcList;
+    CVHandler m_CVHandler;
 protected:
     cv::Mat m_Src;
     cv::Mat m_Dst;
     cv::Mat m_Tmp;
     std::map<std::string, std::vector<std::string>> m_M2P;
     std::vector<std::string> m_ProcessSequence;
-    std::vector<std::vector<UserData>> m_UserDataVector;
-    std::vector<CVHandler> m_CVHandler;
     std::string m_sImgPath;
-    std::map<std::string, void (*)(std::vector<int> &params)> m_CVLibMap;
+    std::map<std::string, void (*)(cv::Mat &src, cv::Mat &dst, std::vector<int> &params)> m_CVLibMap;
 };
 
 #endif

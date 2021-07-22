@@ -15,7 +15,7 @@ Mat CVLibrary::m_Prev;
 
 array<array<float, 4>, 256> CVLibrary::m_vColorTable;
 
-void CVLibrary::onContrastBright(vector<int> &paramValue)
+void CVLibrary::onContrastBright(Mat &src, Mat &dst, vector<int> &paramValue)
 {
     if (paramValue.size() != 2)
     {
@@ -118,7 +118,7 @@ void CVLibrary::motionToColor(Mat flow, Mat &color)
     }
 }
 
-void CVLibrary::onOpticalFlow(vector<int> &paramValue)
+void CVLibrary::onOpticalFlow(Mat &src, Mat &dst, vector<int> &paramValue)
 {
     if (paramValue.size() != 3)
     {
@@ -188,11 +188,11 @@ void CVLibrary::makeColorRatio(const vector<Rect> &roiRegions)
     }
 }
 
-void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
+void CVLibrary::onColorRatioSegment(Mat &src, Mat &dst,  vector<int> &paramValue)
 {
     if (paramValue.size() != 1)
     {
-        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 3" << endl;
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
         return;
     }
     if (m_vColorTable.size() != 256)
@@ -200,9 +200,8 @@ void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
         cout << "make color ratio incorrect: " << m_vColorTable.size() << endl;
         return;
     }
-    float loose = paramValue[0] / 100.0; // range from [0:0.01:1]
+    float loose = paramValue[0] / 100.0 - 0.5; // range from [-0.5:0.01:0.5]
     float b2g(0), g2r(0);
-    m_Dst = Mat::zeros(m_Src.rows, m_Src.cols, CV_8UC1);
     Mat gray;
     cvtColor(m_Src, gray, CV_BGR2GRAY);
     for (int i = 0; i < m_Src.rows; i++)
@@ -225,4 +224,24 @@ void CVLibrary::onColorRatioSegment(vector<int> &paramValue)
         }
     }
     imshow(PROCESSED_WIN, m_Dst);
+}
+
+void CVLibrary::onMedianBlur(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 1)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
+        return;
+    }
+    int kernel = paramValue[0] * 2 + 1; // range from [1:2:201]
+    medianBlur(m_Src, m_Dst, kernel);
+}
+
+void CVLibrary::onMorphologyEx(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 1)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
+        return;
+    }
 }

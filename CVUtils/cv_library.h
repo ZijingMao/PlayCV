@@ -24,12 +24,14 @@ public:
 
     static std::array<std::array<float, 4>, 256> m_vColorTable;
 
-    static void onContrastBright(std::vector<int> &paramValue);
     static void makeColorWheel(std::vector<cv::Scalar> &colorwheel);
-    static void motionToColor(cv::Mat flow, cv::Mat &color);
-    static void onOpticalFlow(std::vector<int> &paramValue);
     static void makeColorRatio(const std::vector<cv::Rect> &roiRegions);
-    static void onColorRatioSegment(std::vector<int> &paramValue);
+    static void motionToColor(cv::Mat flow, cv::Mat &color);
+    static void onContrastBright(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
+    static void onOpticalFlow(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
+    static void onColorRatioSegment(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
+    static void onMedianBlur(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
+    static void onMorphologyEx(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
 };
 
 #endif

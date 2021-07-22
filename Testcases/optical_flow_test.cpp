@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
         cap >> src;
         cvManager.setSrc(src);
         imshow("original", src);
-        cvManager.m_cMethod[0].onCVMethod();
+        cvManager.m_CVHandler.onCVMethod();
         char c = waitKey(50);
         if (c == 27)
             break;
