@@ -26,7 +26,7 @@ void CVManager::loadParamMap()
         {"OpticalFlow", {"levels", "winsize", "iterations"}},
         {"ColorRatioSegment", {"loose"}},
         {"MedianBlur", {"kernel"}},
-        {"MorphologyEx", {"kernel"}}};
+        {"MorphologyEx", {"kernel", "isopen"}}};
 }
 
 void CVManager::loadCVLibMap()
@@ -50,10 +50,11 @@ void CVManager::loadSequence()
     int processCount = m_ProcessSequence.size();
     m_SrcList.clear();
     m_uDataVector.clear();
-    // reset img list to given length
-    m_SrcList.resize(processCount + 1);  
-    // the first img is stored by src img 
-    m_SrcList[0] = CVLibrary::m_Src;
+    // reset img list to given length, with a deep copy
+    for (int i = 0; i < processCount + 1; i++)
+    {
+        m_SrcList.emplace_back(m_Src.clone());
+    }
     // reset vector of user data list with given length
     m_uDataVector.resize(processCount);
     for (int idx = 0; idx < processCount; idx++)

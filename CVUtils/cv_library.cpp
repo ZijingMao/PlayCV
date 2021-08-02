@@ -22,8 +22,7 @@ void CVLibrary::onContrastBright(Mat &src, Mat &dst, vector<int> &paramValue)
         cout << "Method paramter size is: " << paramValue.size() << ", which require to be 2" << endl;
         return;
     }
-    m_Src.convertTo(m_Dst, -1, (double)paramValue[1] / 50.0, paramValue[0] - 50);
-    imshow(PROCESSED_WIN, m_Dst);
+    src.convertTo(dst, -1, (double)paramValue[1] / 50.0, paramValue[0] - 50);
 }
 
 void CVLibrary::makeColorWheel(vector<Scalar> &colorwheel)
@@ -130,13 +129,12 @@ void CVLibrary::onOpticalFlow(Mat &src, Mat &dst, vector<int> &paramValue)
     winsize = paramValue[1] / 5 + 1;    // range from [1:1:21]
     iterations = paramValue[2] / 5 + 1; // range from [1:1:21]
     Mat flow;
-    if (m_Src.channels() != 1)
-        cvtColor(m_Src, m_Tmp, CV_BGR2GRAY);
+    if (src.channels() != 1)
+        cvtColor(src, m_Tmp, CV_BGR2GRAY);
     if (m_Prev.data)
     {
         calcOpticalFlowFarneback(m_Prev, m_Tmp, flow, 0.5, levels, winsize, iterations, 5, 1.2, 0);
-        motionToColor(flow, m_Dst);
-        imshow(PROCESSED_WIN, m_Dst);
+        motionToColor(flow, dst);
     }
     std::swap(m_Prev, m_Tmp);
 }
@@ -188,7 +186,7 @@ void CVLibrary::makeColorRatio(const vector<Rect> &roiRegions)
     }
 }
 
-void CVLibrary::onColorRatioSegment(Mat &src, Mat &dst,  vector<int> &paramValue)
+void CVLibrary::onColorRatioSegment(Mat &src, Mat &dst, vector<int> &paramValue)
 {
     if (paramValue.size() != 1)
     {
@@ -203,14 +201,15 @@ void CVLibrary::onColorRatioSegment(Mat &src, Mat &dst,  vector<int> &paramValue
     float loose = paramValue[0] / 100.0 - 0.5; // range from [-0.5:0.01:0.5]
     float b2g(0), g2r(0);
     Mat gray;
-    cvtColor(m_Src, gray, CV_BGR2GRAY);
-    for (int i = 0; i < m_Src.rows; i++)
+    cvtColor(src, gray, CV_BGR2GRAY);
+    cvtColor(src, dst, CV_BGR2GRAY);
+    for (int i = 0; i < gray.rows; i++)
     {
-        for (int j = 0; j < m_Src.cols; j++)
+        for (int j = 0; j < gray.cols; j++)
         {
-            int b = m_Src.at<Vec3b>(i, j)[0];
-            int g = m_Src.at<Vec3b>(i, j)[1];
-            int r = m_Src.at<Vec3b>(i, j)[2];
+            int b = src.at<Vec3b>(i, j)[0];
+            int g = src.at<Vec3b>(i, j)[1];
+            int r = src.at<Vec3b>(i, j)[2];
             b2g = (float)(b * 1.0 / g);
             g2r = (float)(g * 1.0 / r);
             int gs = gray.at<uchar>(i, j);
@@ -219,11 +218,14 @@ void CVLibrary::onColorRatioSegment(Mat &src, Mat &dst,  vector<int> &paramValue
                 g2r >= m_vColorTable[gs][2] - loose &&
                 g2r <= m_vColorTable[gs][3] + loose)
             {
-                m_Dst.at<uchar>(i, j) = 255;
+                dst.at<uchar>(i, j) = 255;
+            }
+            else
+            {
+                dst.at<uchar>(i, j) = 0;
             }
         }
     }
-    imshow(PROCESSED_WIN, m_Dst);
 }
 
 void CVLibrary::onMedianBlur(Mat &src, Mat &dst, vector<int> &paramValue)
@@ -233,15 +235,26 @@ void CVLibrary::onMedianBlur(Mat &src, Mat &dst, vector<int> &paramValue)
         cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
         return;
     }
-    int kernel = paramValue[0] * 2 + 1; // range from [1:2:201]
-    medianBlur(m_Src, m_Dst, kernel);
+    int kernel = paramValue[0] / 10 * 2 + 1; // range from [1:2:21]
+    medianBlur(src, dst, kernel);
 }
 
 void CVLibrary::onMorphologyEx(Mat &src, Mat &dst, vector<int> &paramValue)
 {
-    if (paramValue.size() != 1)
+    if (paramValue.size() != 2)
     {
-        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 2" << endl;
         return;
+    }
+    int kernel = paramValue[0] / 10 * 2 + 1; // range from [1:2:21]
+    bool isOpen = paramValue[1] > 50;
+    Mat element = getStructuringElement(MORPH_RECT, Size(kernel, kernel));
+    if (isOpen)
+    {
+        morphologyEx(src, dst, CV_MOP_OPEN, element);
+    }
+    else
+    {
+        morphologyEx(src, dst, CV_MOP_CLOSE, element);
     }
 }

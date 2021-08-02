@@ -30,7 +30,7 @@ int main(int argc, char const *argv[])
     // wait until key pressed
     waitKey(0);
 
-    vector<string> proc_name = {"ColorRatioSegment"};
+    vector<string> proc_name = {"MedianBlur", "ColorRatioSegment", "MorphologyEx"};
     CVManager cvManager = CVManager(src);
     cvManager.initCVLibData();
     CVLibrary::makeColorRatio(CVHandler::m_RoiSet);
@@ -38,6 +38,7 @@ int main(int argc, char const *argv[])
     cvManager.loadCVLibMap();
     cvManager.setProcSeq(proc_name);
     cvManager.loadSequence();
+    cvManager.setSrc(src);
 
     // show the brightness and contrast adjusted image
     imshow(PROCESSED_WIN, cvManager.getDst());

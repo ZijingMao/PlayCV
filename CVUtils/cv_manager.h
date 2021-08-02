@@ -23,6 +23,7 @@ public:
     void setSrc(cv::Mat src)
     {
         m_Src = src;
+        m_SrcList[0] = src;
         CVLibrary::m_Src = m_Src;
     }
     void setDst(cv::Mat dst)

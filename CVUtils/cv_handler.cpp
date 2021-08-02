@@ -23,11 +23,15 @@ void CVHandler::onCVMethod()
         if (m_Actions[method])
         {
             updateParamsVal();
-            m_Actions[method](m_SrcImgs[method],
-                              m_SrcImgs[method],
+            m_Actions[method](*m_SrcImgs[method],
+                              *m_DstImgs[method],
                               m_ParamsVal[method]);
+            
         }
     }
+    Mat dst = *m_DstImgs[m_sMethodName.back()];
+    if (dst.data)
+        imshow(PROCESSED_WIN, dst);
 }
 
 void CVHandler::registCVMethod(string &mName, void (*new_action)(Mat &src, Mat &dst, vector<int> &paramValue))
@@ -42,8 +46,8 @@ void CVHandler::registCVParams(string &mName, vector<shared_ptr<UserData>> &data
 
 void CVHandler::registCVImgs(string &mName, Mat &src, Mat &dst)
 {
-    m_SrcImgs[mName] = src;
-    m_DstImgs[mName] = dst;
+    m_SrcImgs[mName] = &src;
+    m_DstImgs[mName] = &dst;
 }
 
 void CVHandler::onBarChange(int value, void *userData)

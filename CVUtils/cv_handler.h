@@ -42,8 +42,8 @@ public:
     std::map<std::string, void (*)(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue)> m_Actions;
     std::map<std::string, std::vector<std::shared_ptr<UserData>>> m_Params;
     std::map<std::string, std::vector<int>> m_ParamsVal;
-    std::map<std::string, cv::Mat> m_SrcImgs;
-    std::map<std::string, cv::Mat> m_DstImgs;
+    std::map<std::string, cv::Mat *> m_SrcImgs;
+    std::map<std::string, cv::Mat *> m_DstImgs;
     std::vector<std::string> m_sMethodName;
 };
 
