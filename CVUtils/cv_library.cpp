@@ -13,15 +13,16 @@ Mat CVLibrary::m_Dst;
 Mat CVLibrary::m_Tmp;
 Mat CVLibrary::m_Prev;
 
-void CVLibrary::onContrastBright(vector<int> &paramValue)
+array<array<float, 4>, 256> CVLibrary::m_vColorTable;
+
+void CVLibrary::onContrastBright(Mat &src, Mat &dst, vector<int> &paramValue)
 {
     if (paramValue.size() != 2)
     {
         cout << "Method paramter size is: " << paramValue.size() << ", which require to be 2" << endl;
         return;
     }
-    m_Src.convertTo(m_Dst, -1, (double)paramValue[1] / 50.0, paramValue[0] - 50);
-    imshow(PROCESSED_NAME, m_Dst);
+    src.convertTo(dst, -1, (double)paramValue[1] / 50.0, paramValue[0] - 50);
 }
 
 void CVLibrary::makeColorWheel(vector<Scalar> &colorwheel)
@@ -100,7 +101,6 @@ void CVLibrary::motionToColor(Mat flow, Mat &color)
             int k0 = (int)fk;
             int k1 = (k0 + 1) % colorwheel.size();
             float f = fk - k0;
-            //f = 0; // uncomment to see original color wheel
 
             for (int b = 0; b < 3; b++)
             {
@@ -117,7 +117,7 @@ void CVLibrary::motionToColor(Mat flow, Mat &color)
     }
 }
 
-void CVLibrary::onOpticalFlow(vector<int> &paramValue)
+void CVLibrary::onOpticalFlow(Mat &src, Mat &dst, vector<int> &paramValue)
 {
     if (paramValue.size() != 3)
     {
@@ -125,16 +125,136 @@ void CVLibrary::onOpticalFlow(vector<int> &paramValue)
         return;
     }
     int levels, winsize, iterations;
-    levels = paramValue[0] / 10 + 1;
-    winsize = paramValue[1] / 5 + 1;
-    iterations = paramValue[2] / 5 + 1;
+    levels = paramValue[0] / 10 + 1;    // range from [1:1:11]
+    winsize = paramValue[1] / 5 + 1;    // range from [1:1:21]
+    iterations = paramValue[2] / 5 + 1; // range from [1:1:21]
     Mat flow;
-    if (m_Src.channels() != 1)
-        cvtColor(m_Src, m_Tmp, CV_BGR2GRAY);
+    if (src.channels() != 1)
+        cvtColor(src, m_Tmp, CV_BGR2GRAY);
     if (m_Prev.data)
     {
         calcOpticalFlowFarneback(m_Prev, m_Tmp, flow, 0.5, levels, winsize, iterations, 5, 1.2, 0);
-        motionToColor(flow, m_Dst);
+        motionToColor(flow, dst);
     }
     std::swap(m_Prev, m_Tmp);
+}
+
+void CVLibrary::makeColorRatio(const vector<Rect> &roiRegions)
+{
+    if (roiRegions.empty())
+    {
+        cout << "no region specified to make color ratio" << endl;
+        return;
+    }
+    // init table
+    for (int i = 0; i < 255; i++)
+    {
+        m_vColorTable[i][0] = INFINITY;
+        m_vColorTable[i][2] = INFINITY;
+    }
+    // you can save the data and load when the program init
+    for (const Rect &r : roiRegions)
+    {
+        Mat roi = m_Src(r); // get the cropped roi region
+        Mat roi_gray;
+        cvtColor(roi, roi_gray, CV_BGR2GRAY);
+        for (int i = 0; i < roi.rows; i++)
+        {
+            for (int j = 0; j < roi.cols; j++)
+            {
+                int b = roi.at<Vec3b>(i, j)[0];
+                int g = roi.at<Vec3b>(i, j)[1];
+                int r = roi.at<Vec3b>(i, j)[2];
+                float b2g = (float)(b * 1.0 / g);
+                float g2r = (float)(g * 1.0 / r);
+                int gs = roi_gray.at<uchar>(i, j);
+                if (gs > 255 || gs < 0)
+                {
+                    cout << "gray scale error not range in 0-255" << endl;
+                    return;
+                }
+                if (m_vColorTable[gs][0] > b2g)
+                    m_vColorTable[gs][0] = b2g;
+                if (m_vColorTable[gs][1] < b2g)
+                    m_vColorTable[gs][1] = b2g;
+                if (m_vColorTable[gs][2] > g2r)
+                    m_vColorTable[gs][2] = g2r;
+                if (m_vColorTable[gs][3] < g2r)
+                    m_vColorTable[gs][3] = g2r;
+            }
+        }
+    }
+}
+
+void CVLibrary::onColorRatioSegment(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 1)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
+        return;
+    }
+    if (m_vColorTable.size() != 256)
+    {
+        cout << "make color ratio incorrect: " << m_vColorTable.size() << endl;
+        return;
+    }
+    float loose = paramValue[0] / 100.0 - 0.5; // range from [-0.5:0.01:0.5]
+    float b2g(0), g2r(0);
+    Mat gray;
+    cvtColor(src, gray, CV_BGR2GRAY);
+    cvtColor(src, dst, CV_BGR2GRAY);
+    for (int i = 0; i < gray.rows; i++)
+    {
+        for (int j = 0; j < gray.cols; j++)
+        {
+            int b = src.at<Vec3b>(i, j)[0];
+            int g = src.at<Vec3b>(i, j)[1];
+            int r = src.at<Vec3b>(i, j)[2];
+            b2g = (float)(b * 1.0 / g);
+            g2r = (float)(g * 1.0 / r);
+            int gs = gray.at<uchar>(i, j);
+            if (b2g >= m_vColorTable[gs][0] - loose &&
+                b2g <= m_vColorTable[gs][1] + loose &&
+                g2r >= m_vColorTable[gs][2] - loose &&
+                g2r <= m_vColorTable[gs][3] + loose)
+            {
+                dst.at<uchar>(i, j) = 255;
+            }
+            else
+            {
+                dst.at<uchar>(i, j) = 0;
+            }
+        }
+    }
+}
+
+void CVLibrary::onMedianBlur(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 1)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
+        return;
+    }
+    int kernel = paramValue[0] / 10 * 2 + 1; // range from [1:2:21]
+    medianBlur(src, dst, kernel);
+}
+
+void CVLibrary::onMorphologyEx(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 2)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 2" << endl;
+        return;
+    }
+    int kernel = paramValue[0] / 10 * 2 + 1; // range from [1:2:21]
+    bool isOpen = paramValue[1] > 50;
+    Mat element = getStructuringElement(MORPH_RECT, Size(kernel, kernel));
+    if (isOpen)
+    {
+        morphologyEx(src, dst, CV_MOP_OPEN, element);
+    }
+    else
+    {
+        morphologyEx(src, dst, CV_MOP_CLOSE, element);
+    }
 }

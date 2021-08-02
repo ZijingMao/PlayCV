@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <thread>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include "cv_manager.h"
@@ -22,35 +23,57 @@ void CVManager::loadParamMap()
 {
     m_M2P = {
         {"ContrastBright", {"bright", "contrast"}},
-        {"OpticalFlow", {"levels", "winsize", "iterations"}}};
+        {"OpticalFlow", {"levels", "winsize", "iterations"}},
+        {"ColorRatioSegment", {"loose"}},
+        {"MedianBlur", {"kernel"}},
+        {"MorphologyEx", {"kernel", "isopen"}}};
 }
 
 void CVManager::loadCVLibMap()
 {
     m_CVLibMap.insert(make_pair("ContrastBright", CVLibrary::onContrastBright));
     m_CVLibMap.insert(make_pair("OpticalFlow", CVLibrary::onOpticalFlow));
+    m_CVLibMap.insert(make_pair("ColorRatioSegment", CVLibrary::onColorRatioSegment));
+    m_CVLibMap.insert(make_pair("MedianBlur", CVLibrary::onMedianBlur));
+    m_CVLibMap.insert(make_pair("MorphologyEx", CVLibrary::onMorphologyEx));
+}
+
+void CVManager::initCVLibData()
+{
+    CVLibrary::m_Src = getSrc();
+    CVLibrary::m_Dst = getDst();
+    CVLibrary::m_Tmp = getTmp();
 }
 
 void CVManager::loadSequence()
 {
-    CVLibrary::m_Src = m_Src;
-    CVLibrary::m_Dst = m_Dst;
-    CVLibrary::m_Tmp = m_Tmp;
-    for (int idx = 0; idx < m_ProcessSequence.size(); idx++)
+    int processCount = m_ProcessSequence.size();
+    m_SrcList.clear();
+    m_uDataVector.clear();
+    // reset img list to given length, with a deep copy
+    for (int i = 0; i < processCount + 1; i++)
+    {
+        m_SrcList.emplace_back(m_Src.clone());
+    }
+    // reset vector of user data list with given length
+    m_uDataVector.resize(processCount);
+    for (int idx = 0; idx < processCount; idx++)
     {
         string m = m_ProcessSequence[idx];
+        // add to method name of cv handler
+        m_CVHandler.m_sMethodName.emplace_back(m);
         vector<string> p = m_M2P[m];
-        vector<UserData> *uData = new vector<UserData>();
         for (int idy = 0; idy < p.size(); idy++)
         {
-            UserData *u = new UserData();
-            CVHandler::userData(u, 50, 100, m, p[idy]);
-            uData->emplace_back(*u);
+            shared_ptr<UserData> u = make_shared<UserData>();
+            // also save the pointer of image sequences used for next processor
+            CVHandler::userData(u, 50, 100, p[idy]);
+            m_uDataVector[idx].emplace_back(u);
         }
-        CVHandler *c = new CVHandler(*uData);
-        m_cMethod.emplace_back(*c);
-        m_uDataVector.emplace_back(*uData);
-        m_cMethod[idx].addTrackBar();
-        m_cMethod[idx].registCVMethod(m_CVLibMap[m]);
+        // TODO: dynamic pointer cast to smart point
+        m_CVHandler.registCVMethod(m, m_CVLibMap[m]);
+        m_CVHandler.registCVParams(m, m_uDataVector[idx]);
+        m_CVHandler.registCVImgs(m, m_SrcList[idx], m_SrcList[idx + 1]);
     }
+    m_CVHandler.addTrackBar();
 }

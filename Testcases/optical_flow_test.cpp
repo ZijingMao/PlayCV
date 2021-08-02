@@ -15,10 +15,11 @@ int main(int argc, char const *argv[])
         return -1;
     Mat src;
     // create a window
-    namedWindow(PROCESSED_NAME, 2);
+    namedWindow(PROCESSED_WIN, 2);
 
     vector<string> proc_name = {"OpticalFlow"};
     CVManager cvManager = CVManager(src);
+    cvManager.initCVLibData();
     cvManager.loadParamMap();
     cvManager.loadCVLibMap();
     cvManager.setProcSeq(proc_name);
@@ -29,9 +30,7 @@ int main(int argc, char const *argv[])
         cap >> src;
         cvManager.setSrc(src);
         imshow("original", src);
-        cvManager.m_cMethod[0].onCVMethod();
-        if (CVLibrary::m_Dst.data)
-            imshow(PROCESSED_NAME, CVLibrary::m_Dst);
+        cvManager.m_CVHandler.onCVMethod();
         char c = waitKey(50);
         if (c == 27)
             break;

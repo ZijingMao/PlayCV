@@ -19,9 +19,11 @@ public:
     void loadParamMap();
     void loadSequence();
     void loadCVLibMap();
+    void initCVLibData();
     void setSrc(cv::Mat src)
     {
         m_Src = src;
+        m_SrcList[0] = src;
         CVLibrary::m_Src = m_Src;
     }
     void setDst(cv::Mat dst)
@@ -39,19 +41,18 @@ public:
     cv::Mat getSrc() { return m_Src; }
     cv::Mat getDst() { return m_Dst; }
     cv::Mat getTmp() { return m_Tmp; }
-    
-    std::vector<std::vector<UserData>> m_uDataVector;
-    std::vector<CVHandler> m_cMethod;
+
+    std::vector<std::vector<std::shared_ptr<UserData>>> m_uDataVector;
+    std::vector<cv::Mat> m_SrcList;
+    CVHandler m_CVHandler;
 protected:
     cv::Mat m_Src;
     cv::Mat m_Dst;
     cv::Mat m_Tmp;
     std::map<std::string, std::vector<std::string>> m_M2P;
     std::vector<std::string> m_ProcessSequence;
-    std::vector<std::vector<UserData>> m_UserDataVector;
-    std::vector<CVHandler> m_CVHandler;
     std::string m_sImgPath;
-    std::map<std::string, void (*)(std::vector<int> &params)> m_CVLibMap;
+    std::map<std::string, void (*)(cv::Mat &src, cv::Mat &dst, std::vector<int> &params)> m_CVLibMap;
 };
 
 #endif
