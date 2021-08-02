@@ -29,6 +29,7 @@ int main(int argc, char const *argv[])
     cvManager.loadCVLibMap();
     cvManager.setProcSeq(proc_name);
     cvManager.loadSequence();
+    cvManager.setSrc(src);
 
     // show the brightness and contrast adjusted image
     imshow(PROCESSED_WIN, cvManager.getDst());
