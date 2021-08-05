@@ -26,7 +26,9 @@ void CVManager::loadParamMap()
         {"OpticalFlow", {"levels", "winsize", "iterations"}},
         {"ColorRatioSegment", {"loose"}},
         {"MedianBlur", {"kernel"}},
-        {"MorphologyEx", {"kernel", "isopen"}}};
+        {"Blur", {"kernel"}},
+        {"MorphologyEx", {"kernel", "isopen"}}, 
+        {"ContrastAmplifer", {"kernel", "scalar"}}};
 }
 
 void CVManager::loadCVLibMap()
@@ -35,7 +37,9 @@ void CVManager::loadCVLibMap()
     m_CVLibMap.insert(make_pair("OpticalFlow", CVLibrary::onOpticalFlow));
     m_CVLibMap.insert(make_pair("ColorRatioSegment", CVLibrary::onColorRatioSegment));
     m_CVLibMap.insert(make_pair("MedianBlur", CVLibrary::onMedianBlur));
+    m_CVLibMap.insert(make_pair("Blur", CVLibrary::onBlur));
     m_CVLibMap.insert(make_pair("MorphologyEx", CVLibrary::onMorphologyEx));
+    m_CVLibMap.insert(make_pair("ContrastAmplifer", CVLibrary::onContrastAmplifer));
 }
 
 void CVManager::initCVLibData()

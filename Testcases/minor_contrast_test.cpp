@@ -9,12 +9,9 @@ using namespace std;
 int main(int argc, char const *argv[])
 {
     // read original image
-    string img_path = "D:\\Data\\test.bmp";
-    Mat src = imread(img_path);
-    resize(src, src, Size(612, 512));
-    CVHandler::m_Layer = src.clone();
-    CVHandler::m_Working = src.clone();
-    CVHandler::m_bIsDraw = false;
+    string img_path = "D:\\Data\\test.jpg";
+    Mat src = imread(img_path, 2);
+    resize(src, src, Size(450, 800));
     // if failed to read image
     if (!src.data)
     {
@@ -23,14 +20,8 @@ int main(int argc, char const *argv[])
     }
     // create a window
     namedWindow(PROCESSED_WIN, 2);
-    namedWindow(DRAW_RECT_WIN, 2);
 
-    imshow(DRAW_RECT_WIN, CVHandler::m_Working);
-    setMouseCallback(DRAW_RECT_WIN, CVHandler::onMouseTrigger, NULL);
-    // wait until key pressed
-    waitKey(0);
-
-    vector<string> proc_name = {"MedianBlur", "ColorRatioSegment", "MorphologyEx"};
+    vector<string> proc_name = {"ContrastAmplifer"};
     CVManager cvManager = CVManager(src);
     cvManager.initCVLibData();
     cvManager.loadParamMap();

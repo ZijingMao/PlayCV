@@ -31,7 +31,9 @@ public:
     static void onOpticalFlow(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
     static void onColorRatioSegment(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
     static void onMedianBlur(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
+    static void onBlur(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
     static void onMorphologyEx(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
+    static void onContrastAmplifer(cv::Mat &src, cv::Mat &dst, std::vector<int> &paramValue);
 };
 
 #endif

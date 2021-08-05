@@ -239,6 +239,17 @@ void CVLibrary::onMedianBlur(Mat &src, Mat &dst, vector<int> &paramValue)
     medianBlur(src, dst, kernel);
 }
 
+void CVLibrary::onBlur(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 1)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 1" << endl;
+        return;
+    }
+    int kernel = paramValue[0] / 10 * 2 + 1; // range from [1:2:21]
+    blur(src, dst, Size(kernel, kernel));
+}
+
 void CVLibrary::onMorphologyEx(Mat &src, Mat &dst, vector<int> &paramValue)
 {
     if (paramValue.size() != 2)
@@ -257,4 +268,45 @@ void CVLibrary::onMorphologyEx(Mat &src, Mat &dst, vector<int> &paramValue)
     {
         morphologyEx(src, dst, CV_MOP_CLOSE, element);
     }
+}
+
+void CVLibrary::onContrastAmplifer(Mat &src, Mat &dst, vector<int> &paramValue)
+{
+    if (paramValue.size() != 2)
+    {
+        cout << "Method paramter size is: " << paramValue.size() << ", which require to be 2" << endl;
+        return;
+    }
+    int kernel = paramValue[0] / 10 * 2 + 1; // range from [1:2:21]
+    float scalar = (float)paramValue[1] / 100 + 0.5; // range from [0.5:0.01:1.5]
+    Mat gray, integralResult;
+    if (src.channels() == 3)
+        cvtColor(src, gray, CV_BGR2GRAY);
+    else
+        gray = src;
+    dst = Mat::zeros(gray.size(), CV_8UC1);
+    integral(gray, integralResult, CV_32F);
+    int margin = kernel / 2;
+    for (int i = margin; i < gray.rows - margin; i++)
+    {
+        for (int j = margin; j < gray.cols - margin; j++)
+        {
+            float integraySum = integralResult.at<float>(i - margin, j - margin) +
+                                integralResult.at<float>(i + margin, j + margin) -
+                                integralResult.at<float>(i + margin, j - margin) -
+                                integralResult.at<float>(i - margin, j + margin);
+            float integrayMean = integraySum / (kernel * kernel);
+            // dst.at<float>(i, j) = integrayMean;
+            // to calculate the darker point, if for brighter point, reverse
+            if (gray.at<uchar>(i, j) < integrayMean * scalar)
+            {
+                int diff = integrayMean * scalar - gray.at<uchar>(i, j);
+                if (diff > 255)
+                    diff = 255;
+                dst.at<uchar>(i, j) = diff;
+            }
+        }
+    }
+    // normalize will function as gaussian blur
+    // normalize(dst, dst, 1, 0, NORM_MINMAX);
 }
